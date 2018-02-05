@@ -74,8 +74,6 @@ for image_tif in glob.glob(image_dir + '*.TIF'):
     gray_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2GRAY)
     found_objects.append([image_tif,find_asterisk(gray_image), find_manicule(gray_image),
                           find_annotation1(gray_image),find_annotation2(gray_image)])
-    idx = idx + 1
-
 # write file
 fp = open('found_objects.pkl','wb')
 pickle.dump(found_objects,fp)
