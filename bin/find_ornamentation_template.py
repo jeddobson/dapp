@@ -1,6 +1,7 @@
 import cv2
 import imutils
 import numpy as np
+import pickle
 import glob
 
 # load and process pattern images
@@ -65,18 +66,16 @@ def find_asterisk(target):
     return(count)
 
 
-image_dir = "ECCO/*/images/"
+image_dir = "../LitAndLang_2/12*/images/"
 found_objects=list()
 for image_tif in glob.glob(image_dir + '*.TIF'):
     
     page_image = cv2.imread(image_tif)
     gray_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2GRAY)
-    #gray_image = cv2.GaussianBlur(gray_image, (3, 3), 0)
-
-    #edges = cv2.Canny(gray_image,100,200)    
-    #kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 8))
-    #smoothed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
-   
     found_objects.append([image_tif,find_asterisk(gray_image), find_manicule(gray_image),
                           find_annotation1(gray_image),find_annotation2(gray_image)])
     idx = idx + 1
+
+# write file
+fp = open('found_objects.pkl','wb')
+pickle.dump(found_objects,fp)
