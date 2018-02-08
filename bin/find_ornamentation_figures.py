@@ -253,7 +253,7 @@ for image_tif in glob.glob(image_dir + '*.TIF'):
         output_file = processed_dir + "/" + os.path.basename(image_tif)
         cv2.imwrite(output_file,page_image)
         found_objects.append([image_tif,image_c,asterisk_c,manicule_c,annotation1_c,annotation2_c])
-        output_pickle=open(output_file + '/objects.pkl','wb')
+        output_pickle=open(processed_dir + '/objects.pkl','wb')
         pickle.dump(found_objects,output_pickle)
 idx = idx + 1
 
