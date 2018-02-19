@@ -13,13 +13,13 @@ soup = BeautifulSoup(data, "html.parser")
 # authorname
 try:
     author=soup.find('marcname').get_text()
-execept:
+except:
     author="None"
 
 # title
 try:
     title=soup.find('displaytitle').get_text()
-execept:
+except:
     title="None"
 
 # publication date
