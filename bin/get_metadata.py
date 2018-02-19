@@ -9,10 +9,40 @@ object = sys.argv[1]
 data = open(object,encoding='ISO-8859-1').read()
 
 soup = BeautifulSoup(data, "html.parser")
-page_data = soup.findAll('page')
-print("Author:",soup.find('marcname').get_text())
-print("Title:",soup.find('displaytitle').get_text())
-print("Publication Date:",soup.find('pubdate').get_text())
-print("Volume:",soup.find('currentvolume').get_text())
-print("ESTCID:",soup.find('estcid').get_text())
-print("found",len(page_data),"pages")
+
+# authorname
+try:
+    author=soup.find('marcname').get_text()
+execept:
+    author="None"
+
+# title
+try:
+    title=soup.find('displaytitle').get_text()
+execept:
+    title="None"
+
+# publication date
+try:
+    pubdate=soup.find('pubdate').get_text()
+except:
+    pubdate="None" 
+
+# volume number
+try:
+    volume=soup.find('currentvolume').get_text()
+except:
+    volume="None" 
+
+# ESTCID 
+try:
+    estcid=soup.find('estcid').get_text()
+except:
+    estcid="None" 
+
+
+print("Author:",author)
+print("Title:",title)
+print("Publication Date:",pubdate)
+print("Volume:",volume)
+print("ESTCID:",estcid)
