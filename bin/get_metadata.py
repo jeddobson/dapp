@@ -1,12 +1,17 @@
 #!/usr/bin/env python
+#
+# get metadata from ECCO xml file
+# James E. Dobson
+# Dartmouth College
+# jed@uchicago.edu
+# 
 
 import os, sys, shutil, glob
 from bs4 import BeautifulSoup
 import argparse
 
-
 parser = argparse.ArgumentParser(
-       description='getmetadata: extract metadata from ECCO xml files')
+    description='getmetadata: extract metadata from ECCO xml files')
 parser.add_argument('--delimited',help='produce delimited output',dest='delimited',action='store_true')
 parser.add_argument('filename')
 args = parser.parse_args()
@@ -16,7 +21,6 @@ if os.path.exists(args.filename) == False:
    exit()
 
 data = open(args.filename,encoding='ISO-8859-1').read()
-
 soup = BeautifulSoup(data, "html.parser")
 
 # authorname
