@@ -2,11 +2,20 @@
 
 import os, sys, shutil, glob
 from bs4 import BeautifulSoup
+import argparse
 
 
-object = sys.argv[1]
+parser = argparse.ArgumentParser(
+       description='getmetadata: extract metadata from ECCO xml files')
+parser.add_argument('--delimited',help='produce delimited output',dest='delimited',action='store_true')
+parser.add_argument('filename')
+args = parser.parse_args()
 
-data = open(object,encoding='ISO-8859-1').read()
+if os.path.exists(args.filename) == False:
+   print("cannot open",args.filename)
+   exit()
+
+data = open(args.filename,encoding='ISO-8859-1').read()
 
 soup = BeautifulSoup(data, "html.parser")
 
@@ -41,8 +50,11 @@ except:
     estcid="None" 
 
 
-print("Author:",author)
-print("Title:",title)
-print("Publication Date:",pubdate)
-print("Volume:",volume)
-print("ESTCID:",estcid)
+if args.delimited == True:
+    print(author,'|',title,'|',estcid,'|',pubdate,'|',volume)
+else:
+    print("Author:",author)
+    print("Title:",title)
+    print("Publication Date:",pubdate)
+    print("Volume:",volume)
+    print("ESTCID:",estcid)
