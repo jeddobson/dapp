@@ -31,7 +31,6 @@ def find_manicule(target):
         cv2.rectangle(target, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
     return(count)
 
-
 def find_annotation1(target):
     (tH, tW) = annotation1_gray.shape[:2]
     res = cv2.matchTemplate(target,annotation1_gray,cv2.TM_CCOEFF_NORMED)
@@ -46,7 +45,7 @@ def find_annotation1(target):
 def find_annotation2(target):
     (tH, tW) = annotation2_gray.shape[:2]
     res = cv2.matchTemplate(target,annotation2_gray,cv2.TM_CCOEFF_NORMED)
-    threshold = 0.85
+    threshold = 0.75
     locations = np.where(res >= threshold)
     count=0
     for pt in zip(*locations[::-1]):
@@ -66,12 +65,11 @@ def find_asterisk(target):
     return(count)
 
 
-image_dir = "../LitAndLang_2/12*/images/"
+image_dir = "../Projects/mmlec/ECCO/*/images/"
 found_objects=list()
 for image_tif in glob.glob(image_dir + '*.TIF'):
-    
-    page_image = cv2.imread(image_tif)
-    gray_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2GRAY)
+    print('processing',image_tif)    
+    gray_image = cv2.imread(image_tif,0)
     found_objects.append([image_tif,find_asterisk(gray_image), find_manicule(gray_image),
                           find_annotation1(gray_image),find_annotation2(gray_image)])
 # write file
