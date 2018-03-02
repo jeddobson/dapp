@@ -14,7 +14,7 @@ object = sys.argv[1]
 asterism_gray = cv2.imread('share/asterism.jpg',0)
 inverted_asterism_gray = cv2.imread('share/inverted_asterism.jpg',0)
 asterism_block_gray = cv2.imread('share/asterism_block.jpg',0)
-astrism_line_gray = = cv2.imread('share/asterism_line.jpg',0)
+astrism_line_gray = cv2.imread('share/asterism_line.jpg',0)
 
 def find_inverted_asterism(target,output):
     (tH, tW) = inverted_asterism_gray.shape[:2]
