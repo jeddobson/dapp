@@ -22,6 +22,8 @@ if os.path.exists(args.filename) == False:
 
 data = open(args.filename,encoding='ISO-8859-1').read()
 soup = BeautifulSoup(data, "html.parser")
+page_data = soup.findAll('page')
+
 
 # authorname
 try:
@@ -61,4 +63,5 @@ else:
     print("Title:",title)
     print("Publication Date:",pubdate)
     print("Volume:",volume)
+    print("Pages:",len(page_data))
     print("ESTCID:",estcid)
