@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-import pickle
+# trivial script to display any possible asterisms found
+
+import pickle, sys
 
 data = pickle.load(open(sys.argv[1]),'rb')
 
 for x in data:
-	if sum(x[1:5]) != 0:
-		print(x)
+ if len(x) > 4:
+   if sum(x[1:5]) != 0:
+     print(x)
