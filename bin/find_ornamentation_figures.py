@@ -1,4 +1,14 @@
 #!/usr/bin/env python
+#
+# James E. Dobson
+# Dartmouth College
+# jed@uchicago.edu
+# 
+
+# This script finds, catalogs, and draws borders around 
+# interesting paratextual objects and ornaments in page
+# images. It is used for the extraction of objects from 
+# ECCO page images of eighteenth-century texts.
 
 import cv2
 import imutils
@@ -12,25 +22,102 @@ from nltk.corpus import words
 
 from bs4 import BeautifulSoup
 
-object = sys.argv[1]
+import argparse
 
+# set default options
+ocrboundaries = False
+
+parser = argparse.ArgumentParser(
+    description='locates objects and annotates ECCO TIF documents')
+parser.add_argument('object')
+parser.add_argument('--draw-ocr-boundaries',help='place green boxes around paragraphs',
+    dest='ocrboundaries',action='store_true')
+args = parser.parse_args()
+
+object = args.object
+
+if object == None:
+   print("Error: need ECCO object")
+   exit()
+
+# load English language vocabulary
 vocab = words.words()
 
-# load and process pattern images
-manicule_image = cv2.imread('share/manicule1.jpg')
-manicule_gray = cv2.cvtColor(manicule_image, cv2.COLOR_BGR2GRAY)
+################################################################################
+# pre-load and process all images used for pattern matching
+# convert to grayscale on load
+################################################################################
 
-annotation1_image = cv2.imread('share/annotation1.jpg')
-annotation1_gray = cv2.cvtColor(annotation1_image, cv2.COLOR_BGR2GRAY)
+manicule_gray = cv2.imread('share/manicule1.jpg',0)
+arabesque_gray = cv2.imread('share/arabesque.jpg',0)
+rosette_gray = cv2.imread('share/rosette.jpg',0)
+annotation3_gray = cv2.imread('share/annotation3.jpg',0)
+longdash_gray = cv2.imread('share/longdash.jpg',0)
 
-annotation2_image = cv2.imread('share/annotation2.jpg')
-annotation2_gray = cv2.cvtColor(annotation2_image, cv2.COLOR_BGR2GRAY)
+# asterisms
+asterism_gray = cv2.imread('share/asterism.jpg',0)
+inverted_asterism_gray = cv2.imread('share/inverted_asterism.jpg',0)
+asterism_block_gray = cv2.imread('share/asterism_block.jpg',0)
+astrism_line_gray = = cv2.imread('share/asterism_line.jpg',0)
 
-annotation3_image = cv2.imread('share/annotation2.jpg')
-annotation3_gray = cv2.cvtColor(annotation2_image, cv2.COLOR_BGR2GRAY)
+#asterisk_image = cv2.imread('share/asterisk1.jpg')
+#asterisk_gray = cv2.cvtColor(asterisk_image, cv2.COLOR_BGR2GRAY)
 
-asterisk_image = cv2.imread('share/asterisk1.jpg')
-asterisk_gray = cv2.cvtColor(asterisk_image, cv2.COLOR_BGR2GRAY)
+def find_inverted_asterism(target,output):
+    (tH, tW) = inverted_asterism_gray.shape[:2]
+    res = cv2.matchTemplate(target,inverted_asterism_gray,cv2.TM_CCOEFF_NORMED)
+    threshold = 0.60
+    locations = np.where(res >= threshold)
+    count=0
+    for pt in zip(*locations[::-1]):
+        count = count + 1
+        cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
+    return(count)
+
+def find_asterism(target,output):
+    (tH, tW) = asterism_gray.shape[:2]
+    res = cv2.matchTemplate(target,asterism_gray,cv2.TM_CCOEFF_NORMED)
+    threshold = 0.60
+    locations = np.where(res >= threshold)
+    count=0
+    for pt in zip(*locations[::-1]):
+        count = count + 1
+        cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
+    return(count)
+
+def find_asterism_line(target,output):
+    (tH, tW) = asterism_line_gray.shape[:2]
+    res = cv2.matchTemplate(target,asterism_line_gray,cv2.TM_CCOEFF_NORMED)
+    threshold = 0.60
+    locations = np.where(res >= threshold)
+    count=0
+    for pt in zip(*locations[::-1]):
+        count = count + 1
+        cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
+    return(count)
+
+def find_asterism_block(target,output):
+    (tH, tW) = asterism_block_gray.shape[:2]
+    res = cv2.matchTemplate(target,asterism_block_gray,cv2.TM_CCOEFF_NORMED)
+    threshold = 0.60
+    locations = np.where(res >= threshold)
+    count=0
+    for pt in zip(*locations[::-1]):
+        count = count + 1
+        cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
+    return(count)
+
+
+def find_longdash(target,output):
+    (tH, tW) = longdash_gray.shape[:2]
+    res = cv2.matchTemplate(target,longdash_gray,cv2.TM_CCOEFF_NORMED)
+    threshold = 0.75
+    locations = np.where(res >= threshold)
+    count=0
+    for pt in zip(*locations[::-1]):
+        count = count + 1
+        cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
+    return(count)
 
 def find_manicule(target,output):
     (tH, tW) = manicule_gray.shape[:2]
@@ -43,10 +130,10 @@ def find_manicule(target,output):
         cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
     return(count)
 
-def find_annotation1(target,output):
-    (tH, tW) = annotation1_gray.shape[:2]
-    res = cv2.matchTemplate(target,annotation1_gray,cv2.TM_CCOEFF_NORMED)
-    threshold = 0.85
+def find_arabesque(target,output):
+    (tH, tW) = arabesque_gray.shape[:2]
+    res = cv2.matchTemplate(target,arabesque_gray,cv2.TM_CCOEFF_NORMED)
+    threshold = 0.60
     locations = np.where(res >= threshold)
     count=0
     for pt in zip(*locations[::-1]):
@@ -54,10 +141,10 @@ def find_annotation1(target,output):
         cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
     return(count)
 
-def find_annotation2(target,output):
-    (tH, tW) = annotation2_gray.shape[:2]
-    res = cv2.matchTemplate(target,annotation2_gray,cv2.TM_CCOEFF_NORMED)
-    threshold = 0.75
+def find_rosette(target,output):
+    (tH, tW) = rosette_gray.shape[:2]
+    res = cv2.matchTemplate(target,rosette_gray,cv2.TM_CCOEFF_NORMED)
+    threshold = 0.70
     locations = np.where(res >= threshold)
     count=0
     for pt in zip(*locations[::-1]):
@@ -76,7 +163,6 @@ def find_asterisk(target,output):
         cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
     return(count)
 
-
 def page_reader(volume):
     file_name = volume
     data = open(file_name,encoding='ISO-8859-1').read()
@@ -94,11 +180,7 @@ def page_reader(volume):
     max_width = max([int(word.get('pos').split(',')[:2][0]) for word in page_size_max])
     page_size = max_length * max_width
 
-    #print("ESTCID:",soup.find('estcid').get_text())
-    #print("found",len(page_data),"pages")
-
     # start parsing each page
-
     volume_text = list()
     line_starting_position = list()
 
@@ -116,7 +198,6 @@ def page_reader(volume):
 
         paragraph_data = page.findAll('p')
         paragraph_count = len(paragraph_data)
-        #print("page:",page_number,"paragraphs:",paragraph_count)
 
         page_text=list()
         page_dims=list()
@@ -144,7 +225,6 @@ def page_reader(volume):
                 position = word.get('pos').split(',')
                 
                 paragraph_matrix.append(position)
-                #print("current:",position,content.strip(),"previous:",paragraph_matrix[len(paragraph_matrix) - 2][0])
                 temp_line=temp_line + ' ' + content.strip()
                 if int(position[0]) < int(paragraph_matrix[len(paragraph_matrix) - 2][0]):
                     page_line_starting_position.append(int(position[0]))
@@ -169,13 +249,11 @@ def page_reader(volume):
         prior_x = 0
     
         for paragraph in page_dims:
-        #text_space = text_space + ( (int(paragraph[0]) * (int(paragraph[1]))))
             text_space = text_space + ( (int(paragraph[2]) - int(paragraph[0])) * (int(paragraph[3]) - int(paragraph[1])))
     return(volume_dims,volume_text)
 
 
 base="../LitAndLang_1/"
-
 
 volume_dims,volume_text = page_reader(base + object + "/xml/" + object + ".xml")
 
@@ -184,7 +262,7 @@ image_dir = base + object + "/images/"
 
 # check to see if the directory exists and remove
 if os.path.isdir(processed_dir):
-    shutil.rmtree(processed_dir)
+    shutil.rmtree(processed_dir,ignore_errors=True)
 os.mkdir(processed_dir)
 
 found_objects=list()
@@ -192,25 +270,23 @@ found_objects=list()
 idx=0 
 
 for image_tif in glob.glob(image_dir + '*.TIF'):
-    objects = 0
     page_dims = volume_dims[idx]
+
+    # need to preserve color information 
     page_image = cv2.imread(image_tif)
     gray_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2GRAY)
     gray_image = cv2.GaussianBlur(gray_image, (3, 3), 0)
     edges = cv2.Canny(gray_image,50,100)
    
-    asterisk_c = find_asterisk(gray_image,page_image) 
-    if asterisk_c > 0:
-       objects = objects + 1
+    #asterisk_c = find_asterisk(gray_image,page_image) 
+
+    asterism_c = find_asterism(gray_image,page_image) 
+    inverted_asterism_c = find_inverted_asterism(gray_image,page_image) 
+
     manicule_c = find_manicule(gray_image,page_image)
-    if manicule_c > 0:
-       objects = objects + 1
-    annotation1_c = find_annotation1(gray_image,page_image)
-    if annotation1_c > 0:
-       objects = objects + 1
-    annotation2_c = find_annotation2(gray_image,page_image)
-    if annotation2_c > 0:
-       objects = objects + 1
+    arabesque_c = find_arabesque(gray_image,page_image)
+    rosette_c = find_rosette(gray_image,page_image)
+    longdash_c = find_longdash(gray_image,page_image)
     
     x, y = page_image.shape[:2] 
     page_area = x * y
@@ -226,34 +302,44 @@ for image_tif in glob.glob(image_dir + '*.TIF'):
                tokens = nltk.word_tokenize(str(s))
                tokens_in_vocab = [word for word in tokens if word.lower() in vocab]
                word_c = word_c + len(tokens_in_vocab)
+
+        # only mask if we find more than two known words
         if word_c > 2:    
             cv2.rectangle(mask, (paragraph[0], paragraph[1]), (paragraph[2], paragraph[3]), 0, -1)
-        cv2.rectangle(page_image, (paragraph[0], paragraph[1]), (paragraph[2], paragraph[3]), (0,255,0), 2)
+
+        # draw boundaries around paragraphs if requested
+        if ocrboundaries == True:
+            cv2.rectangle(page_image, (paragraph[0], paragraph[1]), (paragraph[2], paragraph[3]), (0,255,0), 2)
+
     idx = pidx + 1
 
     edges = cv2.bitwise_and(edges, edges, mask=mask)
-    kernel = np.ones((5,5),np.uint8)
+    kernel = np.ones((3,3),np.uint8)
     erosion = cv2.erode(edges,kernel,iterations = 1)
     dilation = cv2.dilate(edges,kernel,iterations = 1)
-    
+
+    # TEMP: make dilation image the source
     pg_img, contours, hierarchy = cv2.findContours(dilation, cv2.RETR_LIST,cv2.CHAIN_APPROX_NONE)
 
     image_c = 0
     for cnt in contours:
+
         x,y,w,h = cv2.boundingRect(cnt)
                     
-        # if our object covers great than 2% of the page area
-        if w * h > ( page_area * .02):
-            #print(image_tif,x,y, x+w, y+h)
+        # if our object covers more than 5% of the page
+        image_max = 62500
+        if w * h > image_max and w > (h / 8):
+        #if w * h > ( page_area * .05) and w > (h / 8):
             cv2.rectangle(page_image,(x,y),(x+w,y+h),(255,0,0), 2)
             image_c = image_c +1
-    objects = objects + image_c
-            
-    if objects > 0:
-        output_file = processed_dir + "/" + os.path.basename(image_tif)
-        cv2.imwrite(output_file,page_image)
-        found_objects.append([image_tif,image_c,asterisk_c,manicule_c,annotation1_c,annotation2_c])
-    output_pickle=open(processed_dir + '/objects.pkl','wb')
-    pickle.dump(found_objects,output_pickle)
-idx = idx + 1
 
+    output_file = processed_dir + "/" + os.path.basename(image_tif)
+    cv2.imwrite(output_file,page_image)
+
+    # store list of found objects
+    found_objects.append([image_tif,image_c,asterism_c,inverted_asterism_c,manicule_c,
+        arabesque_c,rosette_c,longdash_c])
+
+output_pickle=open(processed_dir + '/objects_' + object + '.pkl','wb')
+pickle.dump(found_objects,output_pickle)
+idx = idx + 1
