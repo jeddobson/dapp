@@ -4,7 +4,7 @@
 
 import pickle, sys
 
-data = pickle.load(open(sys.argv[1]),'rb')
+data = pickle.load(open(sys.argv[1],'rb'))
 
 for x in data:
  if len(x) > 4:
