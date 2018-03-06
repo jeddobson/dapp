@@ -10,6 +10,9 @@ import os, sys, shutil, glob
 from bs4 import BeautifulSoup
 import argparse
 
+basedir="../LitAndLang_1"
+
+# parse arguments
 parser = argparse.ArgumentParser(
     description='getmetadata: extract metadata from ECCO xml files')
 parser.add_argument('--delimited',help='produce delimited output',dest='delimited',action='store_true')
@@ -22,10 +25,10 @@ if eccoid == None:
    print("Error: need ECCO id")
    exit
 
-filename="../LitAndLang_1/" + eccoid + "/xml/" + eccoid + ".xml"
+filename=base_dir + "/" + eccoid + "/xml/" + eccoid + ".xml"
 
 if os.path.exists(filename) == False:
-   print("cannot open",filename)
+   print("ERROR: cannot open",filename)
    exit()
 
 data = open(filename,encoding='ISO-8859-1').read()
