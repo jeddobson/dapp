@@ -26,15 +26,24 @@ import argparse
 
 # set default options
 ocrboundaries = False
+single_image = False
 
+# parse arguments
 parser = argparse.ArgumentParser(
     description='locates objects and annotates ECCO TIF documents')
 parser.add_argument('object')
-parser.add_argument('--draw-ocr-boundaries',help='place green boxes around paragraphs',
-    dest='ocrboundaries',action='store_true')
+parser.add_argument('--draw-ocr-boundaries',help='place green boxes around paragraphs', dest='ocrboundaries', action='store_true')
+parser.add_argument('--single-image', help='mark-up just a single page image', dest='single_image', action='store')
 args = parser.parse_args()
 
 object = args.object
+
+if args.ocrboundaries == True:
+   ocrboundaries = True
+
+if args.single_image != False:
+   single_image_switch = True
+   single_image = args.single_image
 
 if object == None:
    print("Error: need ECCO object")
@@ -50,7 +59,7 @@ vocab = words.words()
 
 manicule_gray = cv2.imread('share/manicule1.jpg',0)
 arabesque_gray = cv2.imread('share/arabesque.jpg',0)
-rosette_gray = cv2.imread('share/rosette.jpg',0)
+rosette_gray = cv2.imread('share/rosette.png',0)
 annotation3_gray = cv2.imread('share/annotation3.jpg',0)
 longdash_gray = cv2.imread('share/longdash.jpg',0)
 
@@ -58,7 +67,7 @@ longdash_gray = cv2.imread('share/longdash.jpg',0)
 asterism_gray = cv2.imread('share/asterism.jpg',0)
 inverted_asterism_gray = cv2.imread('share/inverted_asterism.jpg',0)
 asterism_block_gray = cv2.imread('share/asterism_block.jpg',0)
-astrism_line_gray = = cv2.imread('share/asterism_line.jpg',0)
+astrism_line_gray = cv2.imread('share/asterism_line.jpg',0)
 
 #asterisk_image = cv2.imread('share/asterisk1.jpg')
 #asterisk_gray = cv2.cvtColor(asterisk_image, cv2.COLOR_BGR2GRAY)
@@ -107,7 +116,6 @@ def find_asterism_block(target,output):
         cv2.rectangle(output, pt, (pt[0] + tW, pt[1] + tH), (0,0,255), 2)
     return(count)
 
-
 def find_longdash(target,output):
     (tH, tW) = longdash_gray.shape[:2]
     res = cv2.matchTemplate(target,longdash_gray,cv2.TM_CCOEFF_NORMED)
@@ -144,7 +152,7 @@ def find_arabesque(target,output):
 def find_rosette(target,output):
     (tH, tW) = rosette_gray.shape[:2]
     res = cv2.matchTemplate(target,rosette_gray,cv2.TM_CCOEFF_NORMED)
-    threshold = 0.70
+    threshold = 0.65
     locations = np.where(res >= threshold)
     count=0
     for pt in zip(*locations[::-1]):
@@ -270,6 +278,14 @@ found_objects=list()
 idx=0 
 
 for image_tif in glob.glob(image_dir + '*.TIF'):
+
+    # feature to run just on a single image (needs basename)
+    if single_image_switch == True:
+         if os.path.basename(image_tif) == single_image:
+            pass
+         else:
+            continue
+
     page_dims = volume_dims[idx]
 
     # need to preserve color information 
@@ -286,7 +302,8 @@ for image_tif in glob.glob(image_dir + '*.TIF'):
     manicule_c = find_manicule(gray_image,page_image)
     arabesque_c = find_arabesque(gray_image,page_image)
     rosette_c = find_rosette(gray_image,page_image)
-    longdash_c = find_longdash(gray_image,page_image)
+    #longdash_c = find_longdash(gray_image,page_image)
+    longdash_c = 0 
     
     x, y = page_image.shape[:2] 
     page_area = x * y
@@ -303,22 +320,25 @@ for image_tif in glob.glob(image_dir + '*.TIF'):
                tokens_in_vocab = [word for word in tokens if word.lower() in vocab]
                word_c = word_c + len(tokens_in_vocab)
 
-        # only mask if we find more than two known words
+        # dump suspect OCR: only mask if we find more than two known words
         if word_c > 2:    
             cv2.rectangle(mask, (paragraph[0], paragraph[1]), (paragraph[2], paragraph[3]), 0, -1)
 
-        # draw boundaries around paragraphs if requested
-        if ocrboundaries == True:
-            cv2.rectangle(page_image, (paragraph[0], paragraph[1]), (paragraph[2], paragraph[3]), (0,255,0), 2)
+            # draw boundaries around paragraphs if requested
+            if ocrboundaries == True:
+               cv2.rectangle(page_image, (paragraph[0], paragraph[1]), (paragraph[2], paragraph[3]), (0,255,0), 2)
 
-    idx = pidx + 1
+        pidx = pidx + 1
 
+    # smooth page image and mask
     edges = cv2.bitwise_and(edges, edges, mask=mask)
-    kernel = np.ones((3,3),np.uint8)
-    erosion = cv2.erode(edges,kernel,iterations = 1)
+    kernel = np.ones((5,5),np.uint8)
     dilation = cv2.dilate(edges,kernel,iterations = 1)
 
-    # TEMP: make dilation image the source
+    #output_file = processed_dir + "/d" + os.path.basename(image_tif)
+    #cv2.imwrite(output_file,dilation)
+
+    # search for countours within dilated image
     pg_img, contours, hierarchy = cv2.findContours(dilation, cv2.RETR_LIST,cv2.CHAIN_APPROX_NONE)
 
     image_c = 0
@@ -326,9 +346,12 @@ for image_tif in glob.glob(image_dir + '*.TIF'):
 
         x,y,w,h = cv2.boundingRect(cnt)
                     
-        # if our object covers more than 5% of the page
-        image_max = 62500
-        if w * h > image_max and w > (h / 8):
+        # if area of our object is more than 20k pixels
+        # also remove narrow (bars) or long objects (artifacts)
+        image_max = 20000
+
+        if w * h > image_max and w > (h / 8) and h > (w / 8):
+            print("found object:",x,y,w,h)
         #if w * h > ( page_area * .05) and w > (h / 8):
             cv2.rectangle(page_image,(x,y),(x+w,y+h),(255,0,0), 2)
             image_c = image_c +1
@@ -339,7 +362,7 @@ for image_tif in glob.glob(image_dir + '*.TIF'):
     # store list of found objects
     found_objects.append([image_tif,image_c,asterism_c,inverted_asterism_c,manicule_c,
         arabesque_c,rosette_c,longdash_c])
+    idx = idx + 1
 
 output_pickle=open(processed_dir + '/objects_' + object + '.pkl','wb')
 pickle.dump(found_objects,output_pickle)
-idx = idx + 1
